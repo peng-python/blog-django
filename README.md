@@ -1,5 +1,5 @@
 # blog-django
-首页展示
+首页展示，每日排行则使用redis缓存进行处理
 
 ![image](https://github.com/peng-python/blog-django/blob/master/image/%E9%A6%96%E9%A1%B5.png)
 
