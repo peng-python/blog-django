@@ -15,3 +15,6 @@
 
 ![image](https://github.com/peng-python/blog-django/blob/master/image/register.png)
 
+登录成功后，进行评论，评论完成点击评论按钮则自动刷新评论页面
+
+![image](https://github.com/peng-python/blog-django/blob/master/image/comment.png)
