@@ -3,6 +3,7 @@ from django.shortcuts import render
 from django.views.generic.base import View
 from pure_pagination import Paginator,PageNotAnInteger,EmptyPage
 from django.core.cache import cache
+from django.db.models import Q
 # from django.conf import settings
 from django.views.decorators.cache import cache_page
 from django.http import HttpResponse
@@ -12,7 +13,7 @@ from models import ArticleModel,RecommendModel,SentenceModel,LabelModel,NoticeMo
 # Create your views here.
 
 
-def get_article():
+def get_article_cache():
     hot_article=cache.get('hot_list')
     if hot_article is None:
         hot_article=ArticleModel.objects.all().order_by('-click_nums')[:5]
@@ -28,7 +29,7 @@ class IndexView(View):
         # hot_article=articles.order_by('-click_nums')[:5]
         sentence=SentenceModel.objects.last()
         notice=NoticeModel.objects.last()
-        hot_article=get_article()
+        hot_article=get_article_cache()
 
 
         # hot_article=cache.get('hot_list')
@@ -47,14 +48,14 @@ class IndexView(View):
         return render(request,'blog/index.html',context)
 
 
-# @cache_page(20)
+@cache_page(20)
 def detail(request,article_id):
     article = ArticleModel.objects.get(id=int(article_id))
     # article=hot_articles.get(id=int(article_id))
     taxonomy=LabelModel.objects.get(id=int(article.label.id))#获得分类名称
     relevant_article=taxonomy.articlemodel_set.all()[:5]#取出分类为taxonomy的所有文章
     # hot_article=hot_articles[:5]
-    hot_article=get_article()
+    hot_article=get_article_cache()
     sentence=SentenceModel.objects.last()
     notice=NoticeModel.objects.last()
     article_comment=CommentModel.objects.filter(article_id=int(article_id)).order_by('-id')
@@ -112,3 +113,26 @@ def add_comment(request):
         return HttpResponse('{"status":"success","msg":"添加成功"}',content_type='application/json')
     else:
         return HttpResponse('{"status":"fail","msg":"添加失败"}',content_type='application/json')
+
+
+def search(request):
+    get_article = request.GET
+    search_keywords = get_article.get('keywords', '')
+    hot_article = get_article_cache()
+    sentence = SentenceModel.objects.last()
+    notice = NoticeModel.objects.last()
+    if search_keywords:
+        all_article = ArticleModel.objects.all()
+        all_article = all_article.filter(Q(title__icontains=search_keywords) | Q(content__exact=search_keywords) |
+                                         Q(column__name__icontains=search_keywords) | Q(label__name__icontains=search_keywords))
+        try:
+            page = request.GET.get('page', '1')
+        except PageNotAnInteger:
+            page = 1
+        p = Paginator(all_article, 1, request=request)
+        all_article = p.page(page)
+        context = {'all_article': all_article, 'hot_article': hot_article, 'sentence':sentence, 'notice':notice}
+        return render(request, 'blog/search_list.html', context)
+    else:
+        return render(request,'blog/search_list.html',context={'article': None, 'hot_article':hot_article,
+                                                               'sentence':sentence, 'notice':notice})

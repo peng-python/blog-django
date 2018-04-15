@@ -8,4 +8,5 @@ urlpatterns=[
     url(r'^recommend/(?P<recommend_id>\d+)/$',views.recommend,name='recommend_detail'),
     url(r'^list/(?P<column_id>\d+)/$',views.list,name='list'),
     url(r'^add_comment/$',views.add_comment,name='add_comment'),
+    url(r'^search/$', views.search, name='search'),
 ]
